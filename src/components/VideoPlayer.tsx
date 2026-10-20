@@ -1,5 +1,6 @@
 import type Hls from 'hls.js';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { reportAvailable, reportUnavailable } from '../lib/availability';
 import { countryName } from '../lib/countries';
 import { canPlayHlsNatively, isHlsUrl, isNativeVideoUrl } from '../lib/player';
 import type { Channel } from '../types/channel';
@@ -119,6 +120,7 @@ export function VideoPlayer({
 
     const fail = (message: string) => {
       if (disposed) return;
+      reportUnavailable(channel.id);
       setError(message);
       setStatus('error');
     };
@@ -175,7 +177,10 @@ export function VideoPlayer({
     });
 
     const handlePlaying = () => {
-      if (!disposed) setStatus('playing');
+      if (!disposed) {
+        reportAvailable(channel.id);
+        setStatus('playing');
+      }
     };
     const handlePause = () => {
       if (!disposed) setStatus('paused');

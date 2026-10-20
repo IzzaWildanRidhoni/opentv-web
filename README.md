@@ -6,6 +6,9 @@ Web IPTV player ringan berbasis React + Vite + TypeScript, memakai playlist publ
 ## Fitur
 
 - Daftar channel dari playlist M3U global (`index.m3u`) dengan parsing toleran.
+- Pengecekan ketersediaan otomatis: stream yang terlihat di layar diprobe, channel
+  yang tidak dapat dijangkau browser disembunyikan (cache 12 jam, bisa di-cek ulang
+  atau ditampilkan lewat toggle "Hanya stream tersedia").
 - Pencarian channel, filter kategori (`group-title`), dan filter negara.
 - Favorit tersimpan di `localStorage` (tanpa login).
 - Pemutar HLS via `hls.js` (dimuat lazy) + fallback HTML5 video native.
@@ -58,6 +61,10 @@ api/playlist.ts   # proxy playlist opsional (Vercel)
 - Ketersediaan stream dan hak siar sepenuhnya bergantung pada masing-masing
   penyedia. Sebagian channel bisa offline, geo-blocked, atau memakai codec yang
   tidak didukung browser.
+- Pengecekan ketersediaan bersifat perkiraan: manifest diperiksa dari browser
+  (termasuk CORS), bukan jaminan seluruh segmen video bisa diputar. Format DASH
+  (`.mpd`), FLV, dan MPEG-TS mentah ditandai tidak tersedia karena pemutar ini
+  hanya mendukung HLS dan video native.
 - Playlist global berisi ribuan channel; daftar dirender bertahap (120 item per
   "muat lebih banyak") agar tetap ringan.
 - URL playlist bersifat konfigurasi publik; jangan menaruh token/rahasia di

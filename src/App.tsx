@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import { AppHeader } from './components/AppHeader';
@@ -14,6 +15,12 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { RefreshIcon, SignalOffIcon, SpinnerIcon, StarIcon } from './components/icons';
 import { useFavorites } from './hooks/useFavorites';
 import { usePlaylist } from './hooks/usePlaylist';
+import {
+  getAvailability,
+  getAvailabilityVersion,
+  resetAvailability,
+  subscribeAvailability,
+} from './lib/availability';
 import { countryName } from './lib/countries';
 import type { Channel } from './types/channel';
 
@@ -51,7 +58,15 @@ export default function App() {
   const [activeGroup, setActiveGroup] = useState('');
   const [activeCountry, setActiveCountry] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hideUnavailable, setHideUnavailable] = useState(true);
+  const [recheckNonce, setRecheckNonce] = useState(0);
   const playerRef = useRef<HTMLDivElement>(null);
+
+  const availabilityVersion = useSyncExternalStore(
+    subscribeAvailability,
+    getAvailabilityVersion,
+    getAvailabilityVersion,
+  );
 
   const deferredSearch = useDeferredValue(search);
   const isLoading = status === 'loading' || status === 'idle';
@@ -100,7 +115,7 @@ export default function App() {
     [channels],
   );
 
-  const filteredChannels = useMemo(() => {
+  const baseFilteredChannels = useMemo(() => {
     const term = deferredSearch.trim().toLowerCase();
 
     return channels.filter((channel) => {
@@ -119,6 +134,26 @@ export default function App() {
 
   const activeId =
     selectedId && channelById.has(selectedId) ? selectedId : null;
+
+  const unavailableCount = useMemo(() => {
+    if (!hideUnavailable) return 0;
+    void availabilityVersion;
+    return baseFilteredChannels.filter(
+      (channel) => getAvailability(channel.id) === 'offline',
+    ).length;
+  }, [baseFilteredChannels, hideUnavailable, availabilityVersion]);
+
+  const filteredChannels = useMemo(() => {
+    if (!hideUnavailable) return baseFilteredChannels;
+
+    void availabilityVersion;
+
+    return baseFilteredChannels.filter(
+      (channel) =>
+        channel.id === activeId || getAvailability(channel.id) !== 'offline',
+    );
+  }, [baseFilteredChannels, hideUnavailable, activeId, availabilityVersion]);
+
   const selectedChannel = activeId ? (channelById.get(activeId) ?? null) : null;
 
   useEffect(() => {
@@ -160,6 +195,11 @@ export default function App() {
     setSearch('');
     setActiveGroup('');
     setActiveCountry('');
+  };
+
+  const handleRecheckAvailability = () => {
+    resetAvailability();
+    setRecheckNonce((nonce) => nonce + 1);
   };
 
   const listResetKey = `${view}|${activeGroup}|${activeCountry}|${deferredSearch}`;
@@ -204,6 +244,39 @@ export default function App() {
           icon={<StarIcon className="h-6 w-6" />}
           title="Belum ada favorit"
           description="Tekan ikon bintang pada channel untuk menyimpannya. Favorit disimpan di browser ini."
+        />
+      );
+    }
+
+    if (
+      hideUnavailable &&
+      baseFilteredChannels.length > 0 &&
+      filteredChannels.length === 0
+    ) {
+      return (
+        <EmptyState
+          icon={<SignalOffIcon className="h-6 w-6" />}
+          title="Tidak ada stream yang tersedia"
+          description="Channel pada filter ini tidak dapat dijangkau dari browser ini. Coba cek ulang, atau tampilkan semua channel."
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                type="button"
+                onClick={handleRecheckAvailability}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent-400 px-3.5 py-2 text-xs font-semibold text-ink-950 transition-colors hover:bg-accent-300"
+              >
+                <RefreshIcon className="h-3.5 w-3.5" />
+                Cek ulang
+              </button>
+              <button
+                type="button"
+                onClick={() => setHideUnavailable(false)}
+                className="rounded-lg border border-white/12 bg-white/5 px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10"
+              >
+                Tampilkan semua
+              </button>
+            </div>
+          }
         />
       );
     }
@@ -359,11 +432,16 @@ export default function App() {
               resultCount={filteredChannels.length}
               hasActiveFilters={hasActiveFilters}
               onResetFilters={resetFilters}
+              hideUnavailable={hideUnavailable}
+              onToggleHideUnavailable={() => setHideUnavailable((value) => !value)}
+              unavailableCount={unavailableCount}
+              onRecheckAvailability={handleRecheckAvailability}
             />
           </div>
 
           <div className="h-[68dvh] overflow-hidden rounded-2xl border border-white/8 bg-ink-900/40 p-1.5 lg:h-auto lg:min-h-0 lg:flex-1">
             <ChannelList
+              key={`${listResetKey}|${recheckNonce}`}
               channels={filteredChannels}
               activeId={activeId}
               favoriteSet={favoriteSet}
@@ -388,10 +466,11 @@ export default function App() {
             >
               {PLAYLIST_LABEL}
             </a>
-            . Ketersediaan stream dan hak siar sepenuhnya bergantung pada
-            masing-masing penyedia. Sebagian channel mungkin tidak dapat diputar
-            karena sedang offline, geo-blocking, atau format yang tidak didukung
-            browser.
+            . Ketersediaan stream dicek otomatis di browser ini; channel yang
+            tidak dapat dijangkau disembunyikan. Matikan “Hanya stream tersedia”
+            untuk menampilkannya kembali. Ketersediaan dan hak siar tetap
+            bergantung pada masing-masing penyedia—sebagian channel bisa offline,
+            geo-blocked, atau memakai format yang tidak didukung browser.
           </p>
           <p className="shrink-0 text-slate-600">
             OpenTV · dibuat untuk playlist publik

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { countryName } from '../lib/countries';
-import { ChevronDownIcon, CloseIcon, StarIcon } from './icons';
+import { ChevronDownIcon, CloseIcon, RefreshIcon, StarIcon } from './icons';
 
 export type ChannelView = 'all' | 'favorites';
 
@@ -17,6 +17,10 @@ type ChannelFiltersProps = {
   resultCount: number;
   hasActiveFilters: boolean;
   onResetFilters: () => void;
+  hideUnavailable: boolean;
+  onToggleHideUnavailable: () => void;
+  unavailableCount: number;
+  onRecheckAvailability: () => void;
 };
 
 function Select({
@@ -58,6 +62,10 @@ export function ChannelFilters({
   resultCount,
   hasActiveFilters,
   onResetFilters,
+  hideUnavailable,
+  onToggleHideUnavailable,
+  unavailableCount,
+  onRecheckAvailability,
 }: ChannelFiltersProps) {
   return (
     <div className="space-y-2.5">
@@ -146,6 +154,47 @@ export function ChannelFilters({
           >
             <CloseIcon className="h-4 w-4" />
           </button>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={hideUnavailable}
+          onClick={onToggleHideUnavailable}
+          title="Channel yang stream-nya tidak dapat dijangkau browser ini akan disembunyikan. Status disimpan 12 jam."
+          className="flex min-w-0 items-center gap-2 text-[12px] font-medium text-slate-300 transition-colors hover:text-white"
+        >
+          <span
+            className={`relative inline-flex h-4.5 w-8 shrink-0 items-center rounded-full transition-colors ${
+              hideUnavailable ? 'bg-accent-500' : 'bg-ink-600'
+            }`}
+          >
+            <span
+              className={`h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                hideUnavailable ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </span>
+          <span className="truncate">Hanya stream tersedia</span>
+        </button>
+
+        {unavailableCount > 0 && (
+          <div className="flex shrink-0 items-center gap-1">
+            <span className="text-[10px] text-slate-500 tabular-nums">
+              {unavailableCount.toLocaleString('id-ID')} tersembunyi
+            </span>
+            <button
+              type="button"
+              onClick={onRecheckAvailability}
+              aria-label="Cek ulang ketersediaan"
+              title="Cek ulang ketersediaan channel"
+              className="grid h-6.5 w-6.5 place-items-center rounded-md text-slate-500 transition-colors hover:bg-white/8 hover:text-white"
+            >
+              <RefreshIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </div>

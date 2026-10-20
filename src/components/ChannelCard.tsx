@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { ensureAvailabilityCheck } from '../lib/availability';
 import { countryName } from '../lib/countries';
 import type { Channel } from '../types/channel';
 import { StarIcon } from './icons';
@@ -80,8 +81,35 @@ export function ChannelCard({
     .filter(Boolean)
     .join(' · ');
 
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      ensureAvailabilityCheck(channel);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (observed) => {
+        if (observed.some((entry) => entry.isIntersecting)) {
+          ensureAvailabilityCheck(channel);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '120px' },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [channel]);
+
   return (
     <div
+      ref={cardRef}
       className={`group relative flex items-center gap-2 rounded-xl border pr-1.5 pl-2 transition-colors ${
         isActive
           ? 'border-accent-400/45 bg-accent-400/10'
