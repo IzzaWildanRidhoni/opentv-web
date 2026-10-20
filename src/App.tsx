@@ -12,6 +12,7 @@ import { ChannelFilters, type ChannelView } from './components/ChannelFilters';
 import { ChannelList } from './components/ChannelList';
 import { QuickFilters } from './components/QuickFilters';
 import { VideoPlayer } from './components/VideoPlayer';
+import type { PlayerStatus } from './components/VideoPlayer';
 import { RefreshIcon, SignalOffIcon, SpinnerIcon, StarIcon } from './components/icons';
 import { useFavorites } from './hooks/useFavorites';
 import { usePlaylist } from './hooks/usePlaylist';
@@ -58,6 +59,7 @@ export default function App() {
   const [activeGroup, setActiveGroup] = useState('');
   const [activeCountry, setActiveCountry] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [playerStatus, setPlayerStatus] = useState<PlayerStatus>('idle');
   const [hideUnavailable, setHideUnavailable] = useState(true);
   const [recheckNonce, setRecheckNonce] = useState(0);
   const playerRef = useRef<HTMLDivElement>(null);
@@ -338,6 +340,7 @@ export default function App() {
               canNext={filteredChannels.length > 1}
               onPrev={() => move(-1)}
               onNext={() => move(1)}
+              onStatusChange={setPlayerStatus}
             />
           </div>
 
@@ -444,6 +447,7 @@ export default function App() {
               key={`${listResetKey}|${recheckNonce}`}
               channels={filteredChannels}
               activeId={activeId}
+              activeIsLive={playerStatus === 'playing'}
               favoriteSet={favoriteSet}
               onSelect={handleSelect}
               onToggleFavorite={toggleFavorite}

@@ -17,7 +17,7 @@ import {
   VolumeIcon,
 } from './icons';
 
-type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
+export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
 type VideoPlayerProps = {
   channel: Channel | null;
@@ -25,6 +25,7 @@ type VideoPlayerProps = {
   canNext: boolean;
   onPrev: () => void;
   onNext: () => void;
+  onStatusChange?: (status: PlayerStatus) => void;
 };
 
 function nativeErrorMessage(code: number | undefined): string {
@@ -42,12 +43,15 @@ function nativeErrorMessage(code: number | undefined): string {
   }
 }
 
+const READY_TIMEOUT_MS = 14_000;
+
 export function VideoPlayer({
   channel,
   canPrev,
   canNext,
   onPrev,
   onNext,
+  onStatusChange,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -83,6 +87,16 @@ export function VideoPlayer({
     }
   }, [scheduleHide]);
 
+  const onStatusChangeRef = useRef(onStatusChange);
+
+  useEffect(() => {
+    onStatusChangeRef.current = onStatusChange;
+  }, [onStatusChange]);
+
+  useEffect(() => {
+    onStatusChangeRef.current?.(status);
+  }, [status]);
+
   useEffect(() => {
     if (status === 'playing') {
       scheduleHide();
@@ -108,22 +122,43 @@ export function VideoPlayer({
 
     let hls: Hls | null = null;
     let disposed = false;
+    let failed = false;
+    let readyTimer: number | null = null;
 
     setStatus('loading');
     setError(null);
 
+    const clearReadyTimer = () => {
+      if (readyTimer !== null) {
+        window.clearTimeout(readyTimer);
+        readyTimer = null;
+      }
+    };
+
     const play = () => {
       void video.play().catch(() => {
-        if (!disposed) setStatus('paused');
+        if (!disposed && !failed) setStatus('paused');
       });
     };
 
     const fail = (message: string) => {
       if (disposed) return;
+      failed = true;
+      clearReadyTimer();
       reportUnavailable(channel.id);
       setError(message);
       setStatus('error');
     };
+
+    readyTimer = window.setTimeout(() => {
+      readyTimer = null;
+      if (disposed) return;
+      if (video.readyState >= 2 || video.buffered.length > 0) return;
+
+      fail('Stream tidak merespons. Saluran mungkin offline atau kodeknya tidak didukung.');
+      hls?.destroy();
+      hls = null;
+    }, READY_TIMEOUT_MS);
 
     const attachHls = async (): Promise<boolean> => {
       if (!(isHlsUrl(channel.url) || !isNativeVideoUrl(channel.url))) {
@@ -178,6 +213,7 @@ export function VideoPlayer({
 
     const handlePlaying = () => {
       if (!disposed) {
+        clearReadyTimer();
         reportAvailable(channel.id);
         setStatus('playing');
       }
@@ -206,6 +242,7 @@ export function VideoPlayer({
 
     return () => {
       disposed = true;
+      clearReadyTimer();
 
       video.removeEventListener('playing', handlePlaying);
       video.removeEventListener('pause', handlePause);

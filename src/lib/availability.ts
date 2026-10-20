@@ -150,6 +150,84 @@ export function resetAvailability() {
   emit();
 }
 
+async function readManifest(
+  url: string,
+  signal: AbortSignal,
+): Promise<string | null> {
+  const response = await fetch(url, {
+    signal,
+    mode: 'cors',
+    cache: 'no-store',
+    headers: {
+      Accept:
+        'application/x-mpegURL, application/vnd.apple.mpegurl, text/plain, */*',
+    },
+  });
+
+  if (!response.ok) return null;
+  if (!response.body) return response.text();
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let received = 0;
+  let head = '';
+
+  try {
+    while (received < MAX_MANIFEST_BYTES) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      received += value.byteLength;
+      head += decoder.decode(value, { stream: true });
+
+      if (head.includes('#EXTM3U')) break;
+    }
+  } finally {
+    try {
+      await reader.cancel();
+    } catch {
+      // The response may already be closed.
+    }
+  }
+
+  return head;
+}
+
+function firstUri(text: string): string | null {
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    return line;
+  }
+
+  return null;
+}
+
+async function canFetchChild(
+  url: string,
+  signal: AbortSignal,
+): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      signal,
+      mode: 'cors',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return false;
+
+    try {
+      await response.body?.cancel();
+    } catch {
+      // Ignore a body that is already closed.
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function checkStream(channel: Channel): Promise<Availability> {
   const controller = new AbortController();
   controllers.set(channel.id, controller);
@@ -160,45 +238,31 @@ async function checkStream(channel: Channel): Promise<Availability> {
   );
 
   try {
-    const response = await fetch(channel.url, {
-      signal: controller.signal,
-      mode: 'cors',
-      cache: 'no-store',
-      headers: {
-        Accept:
-          'application/x-mpegURL, application/vnd.apple.mpegurl, text/plain, */*',
-      },
-    });
+    const root = await readManifest(channel.url, controller.signal);
+    if (!root || !root.includes('#EXTM3U')) return 'offline';
 
-    if (!response.ok) return 'offline';
-    if (!response.body) {
-      return (await response.text()).includes('#EXTM3U') ? 'online' : 'offline';
+    const childUri = firstUri(root);
+    if (!childUri) return 'online';
+
+    const childUrl = new URL(childUri, channel.url).toString();
+    const isMaster = root.includes('#EXT-X-STREAM-INF');
+
+    if (!isMaster) {
+      return (await canFetchChild(childUrl, controller.signal))
+        ? 'online'
+        : 'offline';
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let received = 0;
-    let head = '';
+    const media = await readManifest(childUrl, controller.signal);
+    if (!media || !media.includes('#EXTM3U')) return 'offline';
 
-    try {
-      while (received < MAX_MANIFEST_BYTES) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    const segmentUri = firstUri(media);
+    if (!segmentUri) return 'online';
 
-        received += value.byteLength;
-        head += decoder.decode(value, { stream: true });
-
-        if (head.includes('#EXTM3U')) break;
-      }
-    } finally {
-      try {
-        await reader.cancel();
-      } catch {
-        // The response may already be closed.
-      }
-    }
-
-    return head.includes('#EXTM3U') ? 'online' : 'offline';
+    const segmentUrl = new URL(segmentUri, childUrl).toString();
+    return (await canFetchChild(segmentUrl, controller.signal))
+      ? 'online'
+      : 'offline';
   } catch {
     return 'offline';
   } finally {

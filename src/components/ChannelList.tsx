@@ -8,6 +8,7 @@ const PAGE_SIZE = 120;
 type ChannelListProps = {
   channels: Channel[];
   activeId: string | null;
+  activeIsLive: boolean;
   favoriteSet: Set<string>;
   onSelect: (channel: Channel) => void;
   onToggleFavorite: (id: string) => void;
@@ -18,6 +19,7 @@ type ChannelListProps = {
 export function ChannelList({
   channels,
   activeId,
+  activeIsLive,
   favoriteSet,
   onSelect,
   onToggleFavorite,
@@ -71,6 +73,7 @@ export function ChannelList({
             <ChannelCard
               channel={channel}
               isActive={channel.id === activeId}
+              isLive={channel.id === activeId && activeIsLive}
               isFavorite={favoriteSet.has(channel.id)}
               onSelect={onSelect}
               onToggleFavorite={onToggleFavorite}

@@ -7,6 +7,7 @@ import { StarIcon } from './icons';
 type ChannelCardProps = {
   channel: Channel;
   isActive: boolean;
+  isLive: boolean;
   isFavorite: boolean;
   onSelect: (channel: Channel) => void;
   onToggleFavorite: (id: string) => void;
@@ -73,6 +74,7 @@ function ChannelLogo({ channel }: { channel: Channel }) {
 export function ChannelCard({
   channel,
   isActive,
+  isLive,
   isFavorite,
   onSelect,
   onToggleFavorite,
@@ -143,8 +145,12 @@ export function ChannelCard({
         </span>
         {isActive && (
           <span className="flex shrink-0 items-center gap-1 pr-1 text-[10px] font-semibold tracking-wide text-accent-300 uppercase">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-400" />
-            Live
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isLive ? 'animate-pulse bg-accent-400' : 'bg-slate-500'
+              }`}
+            />
+            {isLive ? 'Live' : 'Dipilih'}
           </span>
         )}
       </button>
