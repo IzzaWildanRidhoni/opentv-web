@@ -167,3 +167,53 @@ export function ChevronDownIcon(props: IconProps) {
     </Base>
   );
 }
+
+export function HomeIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8.5Z" />
+    </Base>
+  );
+}
+
+export function GlobeIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </Base>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Base>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="m9 6 6 6-6 6" />
+    </Base>
+  );
+}
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="m15 6-6 6 6 6" />
+    </Base>
+  );
+}
+
+export function ArrowUpRightIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M7 17 17 7M9 7h8v8" />
+    </Base>
+  );
+}

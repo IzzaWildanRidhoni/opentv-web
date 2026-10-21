@@ -2,15 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { ensureAvailabilityCheck } from '../lib/availability';
 import { countryName } from '../lib/countries';
 import type { Channel } from '../types/channel';
-import { StarIcon } from './icons';
 
 type ChannelCardProps = {
   channel: Channel;
+  number?: number;
   isActive: boolean;
-  isLive: boolean;
-  isFavorite: boolean;
   onSelect: (channel: Channel) => void;
-  onToggleFavorite: (id: string) => void;
 };
 
 const AVATAR_TONES = [
@@ -73,11 +70,9 @@ function ChannelLogo({ channel }: { channel: Channel }) {
 
 export function ChannelCard({
   channel,
+  number,
   isActive,
-  isLive,
-  isFavorite,
   onSelect,
-  onToggleFavorite,
 }: ChannelCardProps) {
   const meta = [channel.group, channel.country ? countryName(channel.country) : '']
     .filter(Boolean)
@@ -114,13 +109,10 @@ export function ChannelCard({
       ref={cardRef}
       className={`group relative flex items-center gap-2 rounded-xl border pr-1.5 pl-2 transition-colors ${
         isActive
-          ? 'border-accent-400/45 bg-accent-400/10'
+          ? 'border-white/10 bg-white/[.06]'
           : 'border-transparent hover:border-white/8 hover:bg-white/4'
       }`}
     >
-      {isActive && (
-        <span className="absolute top-1/2 left-0 h-7 w-0.5 -translate-y-1/2 rounded-full bg-accent-400" />
-      )}
 
       <button
         type="button"
@@ -128,6 +120,11 @@ export function ChannelCard({
         aria-current={isActive ? 'true' : undefined}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-xl py-2 text-left"
       >
+        {number !== undefined && (
+          <span className="w-6 shrink-0 text-center text-[11px] font-bold text-slate-500 tabular-nums">
+            {number}
+          </span>
+        )}
         <ChannelLogo channel={channel} />
         <span className="min-w-0 flex-1">
           <span
@@ -137,40 +134,12 @@ export function ChannelCard({
           >
             {channel.name}
           </span>
-          {meta && (
-            <span className="mt-0.5 block truncate text-[11.5px] text-slate-500">
-              {meta}
-            </span>
-          )}
-        </span>
-        {isActive && (
-          <span className="flex shrink-0 items-center gap-1 pr-1 text-[10px] font-semibold tracking-wide text-accent-300 uppercase">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                isLive ? 'animate-pulse bg-accent-400' : 'bg-slate-500'
-              }`}
-            />
-            {isLive ? 'Live' : 'Dipilih'}
+        {meta && (
+          <span className="mt-0.5 block truncate text-[11.5px] text-slate-500">
+            {meta}
           </span>
         )}
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onToggleFavorite(channel.id)}
-        aria-label={
-          isFavorite
-            ? `Hapus ${channel.name} dari favorit`
-            : `Tambah ${channel.name} ke favorit`
-        }
-        title={isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
-          isFavorite
-            ? 'text-amber-400 hover:bg-amber-400/10'
-            : 'text-slate-600 hover:bg-white/8 hover:text-slate-300'
-        }`}
-      >
-        <StarIcon filled={isFavorite} className="h-4 w-4" />
+        </span>
       </button>
     </div>
   );
