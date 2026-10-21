@@ -217,3 +217,13 @@ export function ArrowUpRightIcon(props: IconProps) {
     </Base>
   );
 }
+
+export function LiveIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="2.4" />
+      <path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M6 18a9 9 0 0 1 0-12M18 6a9 9 0 0 1 0 12" />
+    </Base>
+  );
+}

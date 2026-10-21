@@ -11,6 +11,7 @@ import {
 import { AppFooter } from './components/AppFooter';
 import { AppHeader } from './components/AppHeader';
 import { CategoryChips } from './components/CategoryChips';
+import { ChannelCarousel } from './components/ChannelCarousel';
 import { ChannelList } from './components/ChannelList';
 import { ChannelTile } from './components/ChannelTile';
 import { NavRail, VIEW_LABELS, type ViewMode } from './components/NavRail';
@@ -27,6 +28,7 @@ import {
   StarIcon,
   TvIcon,
 } from './components/icons';
+import { HeroCarousel } from './components/HeroCarousel';
 import { useFavorites } from './hooks/useFavorites';
 import { usePlaylist } from './hooks/usePlaylist';
 import { useRecents } from './hooks/useRecents';
@@ -38,6 +40,8 @@ import {
 import { countryName } from './lib/countries';
 import { LIME_GRADIENT, LIME_GRADIENT_HOVER } from './lib/theme';
 import type { Channel } from './types/channel';
+
+const ROW_MAX = 24;
 
 function EmptyState({
   icon,
@@ -209,8 +213,8 @@ export default function App() {
       setSelectedId(channel.id);
       addRecent(channel.id);
 
-      // Player TV hanya ada di Beranda — dari view manapun, langsung pulang ke Beranda
-      if (mode !== 'home') setMode('home');
+      // Player TV hanya ada di Live TV — dari view manapun, langsung ke Live TV
+      if (mode !== 'livetv') setMode('livetv');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [addRecent, mode],
@@ -313,7 +317,100 @@ export default function App() {
     );
   };
 
+  // ---- Kategori baris karosel (beranda) ----
+  const topRows = useMemo(
+    () => categoryOptions.slice(0, 8),
+    [categoryOptions],
+  );
+
   const renderMode = () => {
+    if (mode === 'home') {
+      // BERANDA: hero carousel + chips kategori + baris karosel ala Cinejoy
+      return (
+        <section className="fade-in">
+          <HeroCarousel
+            onWatch={() => setMode('livetv')}
+            onBrowse={() => setMode('search')}
+          />
+
+          <div className="no-scrollbar mt-6 overflow-x-auto">
+            <CategoryChips
+              categories={groupOptions.slice(0, 12)}
+              activeGroup={activeGroup}
+              onGroupSelect={(group) => {
+                setActiveGroup(group);
+                setMode('livetv');
+              }}
+            />
+          </div>
+
+          {status === 'ready' && (
+            <>
+              <ChannelCarousel
+                title="Terakhir ditonton"
+                channels={recentChannels.slice(0, ROW_MAX)}
+                activeId={activeId}
+                activeIsLive={activeIsLive}
+                onSelect={handleSelectChannel}
+                onSeeAll={() => setMode('recents')}
+              />
+              <ChannelCarousel
+                title="Favorit kamu"
+                channels={favoriteChannels.slice(0, ROW_MAX)}
+                activeId={activeId}
+                activeIsLive={activeIsLive}
+                onSelect={handleSelectChannel}
+                onSeeAll={() => setMode('favorites')}
+              />
+            </>
+          )}
+
+          {topRows.map((group) => (
+            <ChannelCarousel
+              key={group.name}
+              title={group.name}
+              channels={channels
+                .filter(
+                  (channel) =>
+                    channel.group === group.name &&
+                    channel.id !== selectedId &&
+                    isAvailable(channel),
+                )
+                .slice(0, ROW_MAX)}
+              activeId={activeId}
+              activeIsLive={activeIsLive}
+              onSelect={handleSelectChannel}
+              onSeeAll={() => {
+                setActiveGroup(group.name);
+                setSearch('');
+                setMode('search');
+              }}
+            />
+          ))}
+
+          {status === 'error' && (
+            <EmptyState
+              icon={<SignalOffIcon className="h-6 w-6" />}
+              title="Playlist gagal dimuat"
+              description={
+                error ??
+                'Tidak dapat mengambil playlist. Periksa koneksi internet lalu coba lagi.'
+              }
+              action={
+                <button
+                  type="button"
+                  onClick={reload}
+                  className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition-opacity hover:opacity-90 ${LIME_GRADIENT}`}
+                >
+                  Coba lagi
+                </button>
+              }
+            />
+          )}
+        </section>
+      );
+    }
+
     if (mode === 'search') {
       return (
         <section className="fade-in">
@@ -434,7 +531,7 @@ export default function App() {
       );
     }
 
-    // HOME: hero + strip zapping + baris kategori
+    // LIVE TV: pemutar + daftar channel terkait ala halaman tonton YouTube
     return (
       <section className="fade-in">
         <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -454,22 +551,6 @@ export default function App() {
 
             {selectedChannel && (
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/8 bg-ink-900/70 p-3.5">
-                <span
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset ${
-                    activeIsLive
-                      ? 'bg-accent-400/12 text-accent-400 ring-accent-400/30'
-                      : 'bg-white/5 text-slate-500 ring-white/10'
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      activeIsLive
-                        ? 'animate-pulse bg-accent-400'
-                        : 'bg-slate-500'
-                    }`}
-                  />
-                  {activeIsLive ? 'Live' : 'Pilih'}
-                </span>
                 <div className="min-w-0 flex-1">
                   <h2 className="font-display truncate text-base font-bold text-white sm:text-lg">
                     {selectedChannel.name}

@@ -399,12 +399,6 @@ export function VideoPlayer({
             }`}
           >
             <div className="flex items-start gap-2.5">
-              {status === 'playing' && (
-                <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md bg-accent-400/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-accent-400 uppercase ring-1 ring-accent-400/30 ring-inset">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent-400" />
-                  Live
-                </span>
-              )}
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-semibold text-white drop-shadow sm:text-base">
                   {channel.name}

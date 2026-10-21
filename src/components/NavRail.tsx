@@ -1,8 +1,8 @@
-import { TvIcon, SearchIcon, StarIcon, ClockIcon } from './icons';
+import { TvIcon, SearchIcon, StarIcon, ClockIcon, LiveIcon } from './icons';
 import { LIME_GRADIENT } from '../lib/theme';
 import type { ComponentType, SVGProps } from 'react';
 
-export type ViewMode = 'home' | 'search' | 'favorites' | 'recents';
+export type ViewMode = 'home' | 'livetv' | 'search' | 'favorites' | 'recents';
 
 type NavItem = {
   mode: ViewMode;
@@ -12,6 +12,7 @@ type NavItem = {
 
 export const VIEW_LABELS: Record<ViewMode, string> = {
   home: 'Beranda',
+  livetv: 'Live TV',
   search: 'Cari channel',
   favorites: 'Favorit',
   recents: 'Riwayat',
@@ -19,6 +20,7 @@ export const VIEW_LABELS: Record<ViewMode, string> = {
 
 export const NAV_ITEMS: NavItem[] = [
   { mode: 'home', label: 'Beranda', icon: TvIcon },
+  { mode: 'livetv', label: 'Live TV', icon: LiveIcon },
   { mode: 'search', label: 'Cari', icon: SearchIcon },
   { mode: 'favorites', label: 'Favorit', icon: StarIcon },
   { mode: 'recents', label: 'Riwayat', icon: ClockIcon },
