@@ -14,6 +14,7 @@ import { CategoryChips } from './components/CategoryChips';
 import { ChannelCarousel } from './components/ChannelCarousel';
 import { ChannelList } from './components/ChannelList';
 import { ChannelTile } from './components/ChannelTile';
+import { CarouselRowSkeleton, GridSkeleton, ListSkeleton } from './components/Skeletons';
 import { NavRail, VIEW_LABELS, type ViewMode } from './components/NavRail';
 import { SearchInput } from './components/SearchInput';
 import { SearchableSelect } from './components/SearchableSelect';
@@ -344,7 +345,7 @@ export default function App() {
             />
           </div>
 
-          {status === 'ready' && (
+          {status === 'ready' ? (
             <>
               <ChannelCarousel
                 title="Terakhir ditonton"
@@ -363,7 +364,13 @@ export default function App() {
                 onSeeAll={() => setMode('favorites')}
               />
             </>
-          )}
+          ) : isLoading ? (
+            <>
+              <CarouselRowSkeleton />
+              <CarouselRowSkeleton />
+              <CarouselRowSkeleton />
+            </>
+          ) : null}
 
           {topRows.map((group) => (
             <ChannelCarousel
@@ -468,6 +475,8 @@ export default function App() {
 
           {searchResults.length > 0 ? (
             gridFor(searchResults)
+          ) : isLoading ? (
+            <GridSkeleton items={18} />
           ) : (
             <EmptyState
               icon={<SignalOffIcon className="h-6 w-6" />}
@@ -689,10 +698,7 @@ export default function App() {
                       }
                     />
                   ) : isLoading ? (
-                    <EmptyState
-                      title="Memuat playlist"
-                      description="Mengunduh daftar channel dari playlist publik."
-                    />
+                    <ListSkeleton rows={10} />
                   ) : hasActiveFilters ? (
                     <EmptyState
                       icon={<SignalOffIcon className="h-6 w-6" />}

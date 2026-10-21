@@ -4,6 +4,7 @@ import { reportAvailable, reportUnavailable } from '../lib/availability';
 import { countryName } from '../lib/countries';
 import { canPlayHlsNatively, isHlsUrl, isNativeVideoUrl } from '../lib/player';
 import { LIME_GRADIENT } from '../lib/theme';
+import { StreamSkeleton } from './Skeletons';
 import type { Channel } from '../types/channel';
 import {
   FullscreenIcon,
@@ -14,7 +15,6 @@ import {
   PrevIcon,
   RefreshIcon,
   SignalOffIcon,
-  SpinnerIcon,
   VolumeIcon,
 } from './icons';
 
@@ -348,14 +348,7 @@ export function VideoPlayer({
           </div>
         )}
 
-        {channel && status === 'loading' && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/35 backdrop-blur-[1px]">
-            <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium text-slate-200 backdrop-blur">
-              <SpinnerIcon className="h-4 w-4 animate-spin text-accent-400" />
-              Menghubungkan ke stream…
-            </div>
-          </div>
-        )}
+        {channel && status === 'loading' && <StreamSkeleton />}
 
         {channel && status === 'error' && (
           <div className="absolute inset-0 grid place-items-center bg-ink-950/85 px-4 backdrop-blur-sm sm:px-6">
