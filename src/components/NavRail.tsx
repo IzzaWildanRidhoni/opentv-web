@@ -68,12 +68,17 @@ export function NavRail({ mode, onModeChange }: NavRailProps) {
         })}
       </aside>
 
-      {/* Dock bawah (mobile) */}
+      {/* Dock bawah (mobile) — 4 menu + Cari di tengah */}
       <nav
         aria-label="Navigasi utama"
-        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-50 flex items-center justify-between rounded-2xl border border-white/10 bg-ink-900/85 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl lg:hidden"
+        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-50 flex items-end justify-between rounded-2xl border border-white/10 bg-ink-900/85 p-1.5 shadow-2xl shadow-black/60 backdrop-blur-xl lg:hidden"
       >
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(
+          (item) =>
+            item.mode !== 'search' &&
+            NAV_ITEMS.findIndex((nav) => nav.mode === item.mode) <
+              NAV_ITEMS.findIndex((nav) => nav.mode === 'search'),
+        ).map((item) => {
           const active = mode === item.mode;
           const Icon = item.icon;
           return (
@@ -85,14 +90,73 @@ export function NavRail({ mode, onModeChange }: NavRailProps) {
                 window.scrollTo({ top: 0 });
               }}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition-colors ${
-                active ? LIME_GRADIENT : 'text-slate-400 hover:text-white'
+              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-semibold transition-colors ${
+                active ? 'text-accent-300' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Icon className="h-5 w-5" strokeWidth={2} />
-              <span className={active ? 'inline' : 'hidden sm:inline'}>
-                {item.label}
+              <span
+                className={`grid h-8 w-10 place-items-center rounded-lg transition-colors ${
+                  active ? 'bg-white/10' : 'bg-transparent'
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={2} />
               </span>
+              {item.label}
+            </button>
+          );
+        })}
+
+        {/* Tombol tengah: Cari */}
+        <button
+          type="button"
+          onClick={() => {
+            onModeChange('search');
+            window.scrollTo({ top: 0 });
+          }}
+          aria-current={mode === 'search' ? 'page' : undefined}
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-semibold transition-colors ${
+            mode === 'search' ? 'text-accent-300' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <span
+            className={`grid h-8 w-10 place-items-center rounded-lg transition-colors ${
+              mode === 'search' ? 'bg-white/10' : 'bg-transparent'
+            }`}
+          >
+            <SearchIcon className="h-5 w-5" strokeWidth={2} />
+          </span>
+          Cari
+        </button>
+
+        {NAV_ITEMS.filter(
+          (item) =>
+            item.mode !== 'search' &&
+            NAV_ITEMS.findIndex((nav) => nav.mode === item.mode) >
+              NAV_ITEMS.findIndex((nav) => nav.mode === 'search'),
+        ).map((item) => {
+          const active = mode === item.mode;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.mode}
+              type="button"
+              onClick={() => {
+                onModeChange(item.mode);
+                window.scrollTo({ top: 0 });
+              }}
+              aria-current={active ? 'page' : undefined}
+              className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-semibold transition-colors ${
+                active ? 'text-accent-300' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span
+                className={`grid h-8 w-10 place-items-center rounded-lg transition-colors ${
+                  active ? 'bg-white/10' : 'bg-transparent'
+                }`}
+              >
+                <Icon className="h-5 w-5" strokeWidth={2} />
+              </span>
+              {item.label}
             </button>
           );
         })}
